@@ -97,18 +97,26 @@
       z-index: 110;
       display: flex;
       flex-direction: column;
-      max-height: 92dvh;
-      transform: translateY(100%);
-      transition: transform var(--duration) var(--ease);
+      /* Fixed at full viewport height so snap positions are pure translateY */
+      height: 100dvh;
+      transform: translateY(100dvh);
+      transition: transform var(--duration) var(--ease),
+                  border-radius var(--duration) var(--ease);
       will-change: transform;
       touch-action: none;
     }
 
-    /* snap states */
-    .bottom-sheet.snap-peek    { transform: translateY(calc(100% - 100px)); }
-    .bottom-sheet.snap-half    { transform: translateY(40%); }
-    .bottom-sheet.snap-full    { transform: translateY(0); }
-    .bottom-sheet.dragging     { transition: none; }
+    /* snap states — based on viewport thirds */
+    /* 1st dot: 1/3 visible → translateY = 2/3 vh */
+    .bottom-sheet.snap-peek { transform: translateY(calc(100dvh * 2 / 3)); }
+    /* 2nd dot: 2/3 visible → translateY = 1/3 vh */
+    .bottom-sheet.snap-half { transform: translateY(calc(100dvh / 3)); }
+    /* 3rd dot: full screen → no translation, no rounded top */
+    .bottom-sheet.snap-full {
+      transform: translateY(0);
+      border-radius: 0;
+    }
+    .bottom-sheet.dragging  { transition: none; }
 
     /* ── Handle area ── */
     .sheet-handle-area {
@@ -446,8 +454,7 @@ $(function () {
 
   // ── Open / close helpers ───────────────────────────────────────────────────
   function open(snap) {
-    snap = snap || 'full';
-    $backdrop.addClass('visible');
+    snap = snap || 'half';
     applySnap(snap);
     loadPdf();
   }
@@ -467,6 +474,13 @@ $(function () {
       .css('transform', '');
     currentSnap = snap;
     updateDots(snap);
+    // Full snap: sheet covers everything — no backdrop needed.
+    // Peek/half: show backdrop so background is dimmed.
+    if (snap === 'full') {
+      $backdrop.removeClass('visible');
+    } else {
+      $backdrop.addClass('visible');
+    }
   }
 
   function updateDots(snap) {
@@ -480,19 +494,19 @@ $(function () {
     active: false,
     startY: 0,
     startTranslate: 0,
-    sheetH: 0,
     lastY: 0,
     velocity: 0,
   };
 
+  // Sheet is always 100dvh tall; snaps are viewport-fraction translateY values.
   function getSnapTranslate(snap) {
-    const h = $sheet[0].offsetHeight;
+    const vh = window.innerHeight;
     switch (snap) {
-      case 'peek': return h - 100;
-      case 'half': return h * 0.40;
-      case 'full': return 0;
+      case 'peek': return vh * 2 / 3;   // 1/3 of screen visible
+      case 'half': return vh * 1 / 3;   // 2/3 of screen visible
+      case 'full': return 0;            // full screen
     }
-    return h;
+    return vh; // hidden
   }
 
   function getCurrentTranslate() {
@@ -503,7 +517,6 @@ $(function () {
   function onDragStart(clientY) {
     drag.active         = true;
     drag.startY         = clientY;
-    drag.sheetH         = $sheet[0].offsetHeight;
     drag.startTranslate = getCurrentTranslate();
     drag.lastY          = clientY;
     drag.velocity       = 0;
@@ -516,8 +529,8 @@ $(function () {
     drag.lastY    = clientY;
 
     let next = drag.startTranslate + (clientY - drag.startY);
-    if (next < 0) next = next * 0.25;
-    next = Math.min(next, drag.sheetH + 60);
+    if (next < 0) next = next * 0.25;                         // rubber-band above full
+    next = Math.min(next, window.innerHeight + 60);            // clamp below screen
 
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
@@ -531,9 +544,10 @@ $(function () {
     $sheet.removeClass('dragging');
 
     const currentY = getCurrentTranslate();
-    const h = drag.sheetH;
+    const vh = window.innerHeight;
 
-    if (currentY > h * 0.62 || drag.velocity > 18) { close(); return; }
+    // Dismiss if dragged below the peek position (~2/3 vh) or fast flick down
+    if (currentY > vh * 0.80 || drag.velocity > 18) { close(); return; }
 
     const snapYMap = SNAPS.reduce((acc, s) => {
       acc[s] = getSnapTranslate(s); return acc;
