@@ -232,22 +232,12 @@ html, body {
   min-height: 0;
 }
 
-/* ── Scroll container we own ── */
-/* Making this the scrollable element lets us call scrollTo(0, scrollHeight)  */
-.pdf-scroll-container {
+/* ── PDF iframe ── */
+.pdf-frame {
   position: absolute;
   inset: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-.pdf-scroll-container::-webkit-scrollbar { display: none; }
-
-/* ── PDF iframe ── */
-/* Tall enough that the native PDF viewer renders all pages stacked vertically */
-.pdf-frame {
   width: 100%;
-  height: 10000px;
+  height: 100%;
   border: none;
   display: block;
 }

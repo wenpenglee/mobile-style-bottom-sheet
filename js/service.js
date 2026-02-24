@@ -14,7 +14,7 @@ const BottomSheetService = (function ($) {
   const PDF_TIMEOUT_MS          = 15000;
 
   // ── DOM refs (set via init) ────────────────────────────────────────────────
-  let $sheet, $backdrop, $snapDots, $frame, $scrollContainer, $loader, $error;
+  let $sheet, $backdrop, $snapDots, $frame, $loader, $error;
 
   // ── State ──────────────────────────────────────────────────────────────────
   let currentSnap = null;
@@ -31,13 +31,12 @@ const BottomSheetService = (function ($) {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init(els) {
-    $sheet           = els.$sheet;
-    $backdrop        = els.$backdrop;
-    $snapDots        = els.$snapDots;
-    $frame           = els.$frame;
-    $scrollContainer = els.$scrollContainer;
-    $loader          = els.$loader;
-    $error           = els.$error;
+    $sheet    = els.$sheet;
+    $backdrop = els.$backdrop;
+    $snapDots = els.$snapDots;
+    $frame    = els.$frame;
+    $loader   = els.$loader;
+    $error    = els.$error;
   }
 
   // ── PDF loading ────────────────────────────────────────────────────────────
@@ -83,11 +82,23 @@ const BottomSheetService = (function ($) {
   }
 
   // ── PDF navigation ─────────────────────────────────────────────────────────
-  // scrollTo(0, scrollHeight) on the container we own scrolls to the very
-  // bottom of the tall iframe, where the PDF viewer has rendered the last page.
+  // Replace the iframe element entirely with a fresh one at #page=9999.
+  // Replacing (not just changing .src) forces a real navigation so the
+  // PDF viewer reads the fragment on load. No spinner — the PDF is already
+  // cached by the browser after the initial load so the swap is instant.
   function goToLastPage() {
     if (!pdfLoaded) return;
-    $scrollContainer[0].scrollTo({ top: $scrollContainer[0].scrollHeight, behavior: 'smooth' });
+
+    var $newFrame = $('<iframe>', {
+      'class':        'pdf-frame',
+      id:             'pdfFrame',
+      title:          'PDF Viewer',
+      allowfullscreen: '',
+    });
+
+    $frame.replaceWith($newFrame);
+    $frame = $newFrame;
+    $frame.attr('src', PDF_URL + '#page=9999');
   }
 
   // ── Snap state ─────────────────────────────────────────────────────────────
