@@ -7,7 +7,7 @@ const BottomSheetService = (function ($) {
   'use strict';
 
   // ── Constants ──────────────────────────────────────────────────────────────
-  const PDF_URL = 'https://www.princexml.com/samples/invoice-colorful/invoicesample.pdf';
+  const PDF_URL = 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf';
   const SNAPS   = ['peek', 'half', 'full'];
   const DISMISS_THRESHOLD_RATIO = 0.80; // dismiss if dragged below 80% of vh
   const DISMISS_VELOCITY        = 18;   // px/frame flick threshold
@@ -166,10 +166,14 @@ const BottomSheetService = (function ($) {
   function goToLastPage() {
     if (!pdfLoaded) return;
     $loader.removeClass('hidden');
-    $frame.one('load', function () {
-      $loader.addClass('hidden');
-    });
-    $frame.attr('src', PDF_URL + '#page=9999');
+    // Remove src first so the browser treats the next assignment as a
+    // full navigation (not a same-document hash change), ensuring the
+    // PDF viewer picks up the #page=9999 fragment on load.
+    $frame.removeAttr('src');
+    setTimeout(function () {
+      $frame.attr('src', PDF_URL + '#page=9999');
+    }, 50);
+    // The persistent load handler in loadPdf() hides the loader on arrival.
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
