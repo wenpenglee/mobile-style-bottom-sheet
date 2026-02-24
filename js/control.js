@@ -6,18 +6,17 @@ $(function () {
   'use strict';
 
   // ── DOM references ─────────────────────────────────────────────────────────
-  const $sheet       = $('#bottomSheet');
-  const $backdrop    = $('#backdrop');
-  const $handle      = $('#handleArea');
-  const $body        = $sheet.find('.sheet-body');
-  const $snapDots    = $('.snap-dot');
-  const $frame       = $('#pdfFrame');
-  const $loader      = $('#pdfLoader');
-  const $error       = $('#pdfError');
-  const $lastPageBtn = $('#lastPageBtn');
+  const $sheet    = $('#bottomSheet');
+  const $backdrop = $('#backdrop');
+  const $handle   = $('#handleArea');
+  const $body     = $sheet.find('.sheet-body');
+  const $snapDots = $('.snap-dot');
+  const $frame    = $('#pdfFrame');
+  const $loader   = $('#pdfLoader');
+  const $error    = $('#pdfError');
 
   // ── Initialise service with DOM refs ───────────────────────────────────────
-  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error, $lastPageBtn });
+  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error });
 
   // ── Drag: handle (always triggers drag) ───────────────────────────────────
   $handle[0].addEventListener('pointerdown', function (e) {
