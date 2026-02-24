@@ -470,13 +470,7 @@ $(function () {
       .css('transform', '');
     currentSnap = snap;
     updateDots(snap);
-    // Full snap: sheet covers everything — no backdrop needed.
-    // Peek/half: show backdrop so background is dimmed.
-    if (snap === 'full') {
-      $backdrop.removeClass('visible');
-    } else {
-      $backdrop.addClass('visible');
-    }
+    $backdrop.addClass('visible');
   }
 
   function updateDots(snap) {
