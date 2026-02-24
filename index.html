@@ -44,7 +44,7 @@
     </div>
     <div class="sheet-header-actions">
       <a class="icon-btn"
-         href="https://www.princexml.com/samples/invoice-colorful/invoicesample.pdf"
+         href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
          target="_blank"
          rel="noopener noreferrer"
          title="Open in new tab"
@@ -67,11 +67,12 @@
       <div class="pdf-error" id="pdfError">
         <span>⚠️</span>
         <p>Unable to display the PDF inline.<br>Open it directly in your browser.</p>
-        <a href="https://www.princexml.com/samples/invoice-colorful/invoicesample.pdf"
+        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
            target="_blank" rel="noopener noreferrer">Open PDF</a>
       </div>
 
-      <iframe class="pdf-frame" id="pdfFrame" title="Invoice Sample PDF" allowfullscreen></iframe>
+      <!-- PDF.js canvas pages render here -->
+      <div class="pdf-canvas-wrap" id="pdfCanvasWrap"></div>
 
       <!-- Floating action button — last page -->
       <button class="pdf-fab" id="lastPageBtn" aria-label="Go to last page" title="Go to last page">
@@ -87,6 +88,7 @@
 </div><!-- /.bottom-sheet -->
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/service.js"></script>
 <script src="js/control.js"></script>
 </body>

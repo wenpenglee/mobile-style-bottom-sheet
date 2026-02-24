@@ -6,17 +6,16 @@ $(function () {
   'use strict';
 
   // ── DOM references ─────────────────────────────────────────────────────────
-  const $sheet    = $('#bottomSheet');
-  const $backdrop = $('#backdrop');
-  const $handle   = $('#handleArea');
-  const $body     = $sheet.find('.sheet-body');
-  const $snapDots = $('.snap-dot');
-  const $frame    = $('#pdfFrame');
-  const $loader   = $('#pdfLoader');
-  const $error    = $('#pdfError');
+  const $sheet      = $('#bottomSheet');
+  const $backdrop   = $('#backdrop');
+  const $handle     = $('#handleArea');
+  const $snapDots   = $('.snap-dot');
+  const $canvasWrap = $('#pdfCanvasWrap');
+  const $loader     = $('#pdfLoader');
+  const $error      = $('#pdfError');
 
   // ── Initialise service with DOM refs ───────────────────────────────────────
-  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error });
+  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $canvasWrap, $loader, $error });
 
   // ── Drag: handle (always triggers drag) ───────────────────────────────────
   $handle[0].addEventListener('pointerdown', function (e) {
@@ -25,9 +24,9 @@ $(function () {
     BottomSheetService.onDragStart(e.clientY);
   }, { passive: false });
 
-  // Drag from body only when scrolled to top (so normal scroll still works)
-  $body[0].addEventListener('pointerdown', function (e) {
-    if ($body[0].scrollTop === 0) {
+  // Drag from canvas wrap only when scrolled to the top
+  $canvasWrap[0].addEventListener('pointerdown', function (e) {
+    if ($canvasWrap[0].scrollTop === 0) {
       BottomSheetService.onDragStart(e.clientY);
     }
   });
