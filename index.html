@@ -4,320 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bottom Sheet</title>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --sheet-radius: 20px;
-      --handle-color: #d1d5db;
-      --bg: #f3f4f6;
-      --surface: #ffffff;
-      --text-primary: #111827;
-      --text-secondary: #6b7280;
-      --accent: #6366f1;
-      --accent-light: #eef2ff;
-      --divider: #e5e7eb;
-      --shadow: 0 -4px 32px rgba(0,0,0,0.12);
-      --duration: 320ms;
-      --ease: cubic-bezier(0.32, 0.72, 0, 1);
-    }
-
-    html, body {
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      overflow: hidden;
-    }
-
-    /* ── Page content ── */
-    .page {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 24px;
-      user-select: none;
-    }
-
-    .page h1 {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-align: center;
-    }
-
-    .page p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      text-align: center;
-      max-width: 280px;
-      line-height: 1.6;
-    }
-
-    .open-btn {
-      margin-top: 8px;
-      padding: 14px 32px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s, background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .open-btn:active { transform: scale(0.96); background: #4f46e5; }
-
-    /* ── Backdrop ── */
-    .backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--duration) var(--ease);
-      z-index: 100;
-    }
-    .backdrop.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* ── Bottom Sheet ── */
-    .bottom-sheet {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      background: var(--surface);
-      border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
-      box-shadow: var(--shadow);
-      z-index: 110;
-      display: flex;
-      flex-direction: column;
-      /* Fixed at full viewport height so snap positions are pure translateY */
-      height: 100dvh;
-      transform: translateY(100dvh);
-      transition: transform var(--duration) var(--ease);
-      will-change: transform;
-      touch-action: none;
-    }
-
-    /* snap states — based on viewport thirds */
-    /* 1st dot: 1/3 visible → translateY = 2/3 vh */
-    .bottom-sheet.snap-peek { transform: translateY(calc(100dvh * 2 / 3)); }
-    /* 2nd dot: 2/3 visible → translateY = 1/3 vh */
-    .bottom-sheet.snap-half { transform: translateY(calc(100dvh / 3)); }
-    /* 3rd dot: full screen — translation 0, rounded top corners kept */
-    .bottom-sheet.snap-full { transform: translateY(0); }
-    .bottom-sheet.dragging  { transition: none; }
-
-    /* ── Handle area ── */
-    .sheet-handle-area {
-      flex-shrink: 0;
-      padding: 12px 0 8px;
-      display: flex;
-      justify-content: center;
-      cursor: grab;
-    }
-    .sheet-handle-area:active { cursor: grabbing; }
-
-    .sheet-handle {
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--handle-color);
-      transition: background 0.15s;
-    }
-    .sheet-handle-area:hover .sheet-handle { background: #9ca3af; }
-
-    /* ── Snap indicator pills ── */
-    .snap-indicator {
-      flex-shrink: 0;
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      padding: 0 0 12px;
-    }
-
-    .snap-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--divider);
-      transition: background 0.2s, transform 0.2s;
-      cursor: pointer;
-    }
-    .snap-dot.active {
-      background: var(--accent);
-      transform: scale(1.3);
-    }
-
-    /* ── Sheet Header ── */
-    .sheet-header {
-      flex-shrink: 0;
-      padding: 4px 20px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sheet-title-group {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .pdf-icon {
-      flex-shrink: 0;
-      width: 36px; height: 36px;
-      border-radius: 9px;
-      background: #fef2f2;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-
-    .sheet-title-stack { min-width: 0; }
-
-    .sheet-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sheet-subtitle {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 1px;
-    }
-
-    .sheet-header-actions {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .icon-btn {
-      width: 32px; height: 32px;
-      border: none;
-      background: var(--bg);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      color: var(--text-secondary);
-      transition: background 0.15s, color 0.15s;
-      -webkit-tap-highlight-color: transparent;
-      text-decoration: none;
-      font-size: 15px;
-    }
-    .icon-btn:hover { background: var(--divider); color: var(--text-primary); }
-    .icon-btn:active { transform: scale(0.92); }
-
-    /* ── Divider ── */
-    .sheet-divider {
-      flex-shrink: 0;
-      height: 1px;
-      background: var(--divider);
-      margin: 0;
-    }
-
-    /* ── PDF viewer body ── */
-    .sheet-body {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    /* ── PDF frame wrapper ── */
-    .pdf-wrap {
-      flex: 1;
-      position: relative;
-      min-height: 0;
-    }
-
-    .pdf-frame {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-      background: var(--bg);
-    }
-
-    /* ── Loading overlay ── */
-    .pdf-loader {
-      position: absolute;
-      inset: 0;
-      background: var(--surface);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      transition: opacity 0.3s;
-      z-index: 2;
-    }
-    .pdf-loader.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--divider);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.75s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .pdf-loader p {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    /* ── Error state ── */
-    .pdf-error {
-      position: absolute;
-      inset: 0;
-      background: var(--surface);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 24px;
-      z-index: 2;
-    }
-    .pdf-error.visible { display: flex; }
-    .pdf-error span { font-size: 36px; }
-    .pdf-error p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      text-align: center;
-      line-height: 1.5;
-    }
-    .pdf-error a {
-      margin-top: 4px;
-      padding: 10px 22px;
-      background: var(--accent);
-      color: #fff;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: opacity 0.15s;
-    }
-    .pdf-error a:active { opacity: 0.8; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
@@ -342,8 +29,8 @@
   <!-- Snap indicator -->
   <div class="snap-indicator">
     <div class="snap-dot" data-snap="peek"></div>
-    <div class="snap-dot" data-snap="half"></div>
-    <div class="snap-dot active" data-snap="full"></div>
+    <div class="snap-dot active" data-snap="half"></div>
+    <div class="snap-dot" data-snap="full"></div>
   </div>
 
   <!-- Header -->
@@ -356,16 +43,12 @@
       </div>
     </div>
     <div class="sheet-header-actions">
-      <!-- Open in new tab -->
       <a class="icon-btn"
          href="https://www.princexml.com/samples/invoice-colorful/invoicesample.pdf"
          target="_blank"
          rel="noopener noreferrer"
          title="Open in new tab"
-         aria-label="Open PDF in new tab">
-        &#x2197;
-      </a>
-      <!-- Close -->
+         aria-label="Open PDF in new tab">&#x2197;</a>
       <button class="icon-btn" id="closeBtn" aria-label="Close">&#x2715;</button>
     </div>
   </div>
@@ -376,13 +59,11 @@
   <div class="sheet-body">
     <div class="pdf-wrap">
 
-      <!-- Loading spinner -->
       <div class="pdf-loader" id="pdfLoader">
         <div class="spinner"></div>
         <p>Loading PDF…</p>
       </div>
 
-      <!-- Error fallback -->
       <div class="pdf-error" id="pdfError">
         <span>⚠️</span>
         <p>Unable to display the PDF inline.<br>Open it directly in your browser.</p>
@@ -390,194 +71,15 @@
            target="_blank" rel="noopener noreferrer">Open PDF</a>
       </div>
 
-      <!-- The PDF frame (src set by JS on open to avoid loading before sheet opens) -->
-      <iframe
-        class="pdf-frame"
-        id="pdfFrame"
-        title="Invoice Sample PDF"
-        allowfullscreen>
-      </iframe>
+      <iframe class="pdf-frame" id="pdfFrame" title="Invoice Sample PDF" allowfullscreen></iframe>
 
     </div>
   </div>
 
 </div><!-- /.bottom-sheet -->
 
-<script>
-$(function () {
-
-  const PDF_URL = 'https://www.princexml.com/samples/invoice-colorful/invoicesample.pdf';
-
-  const SNAPS = ['peek', 'half', 'full'];
-  let currentSnap = null;
-  let rafId = null;
-  let pdfLoaded = false;
-
-  const $sheet    = $('#bottomSheet');
-  const $backdrop = $('#backdrop');
-  const $handle   = $('#handleArea');
-  const $body     = $sheet.find('.sheet-body');
-  const $frame    = $('#pdfFrame');
-  const $loader   = $('#pdfLoader');
-  const $error    = $('#pdfError');
-
-  // ── PDF loading ────────────────────────────────────────────────────────────
-  function loadPdf() {
-    if (pdfLoaded) return;
-    pdfLoaded = true;
-    $loader.removeClass('hidden');
-    $error.removeClass('visible');
-
-    // Set src — browser renders PDF natively
-    $frame.attr('src', PDF_URL);
-
-    // Hide spinner when iframe fires load
-    $frame.on('load', function () {
-      $loader.addClass('hidden');
-    });
-
-    // Detect load failure via a timeout heuristic (iframes don't fire onerror)
-    const timer = setTimeout(function () {
-      // If still showing loader after 15 s, assume blocked / failed
-      if (!$loader.hasClass('hidden')) {
-        $loader.addClass('hidden');
-        $error.addClass('visible');
-      }
-    }, 15000);
-
-    $frame.on('load', function () { clearTimeout(timer); });
-  }
-
-  // ── Open / close helpers ───────────────────────────────────────────────────
-  function open(snap) {
-    snap = snap || 'half';
-    applySnap(snap);
-    loadPdf();
-  }
-
-  function close() {
-    $sheet.removeClass('dragging snap-peek snap-half snap-full');
-    $backdrop.removeClass('visible');
-    currentSnap = null;
-    updateDots(null);
-    $sheet.css('transform', '');
-  }
-
-  function applySnap(snap) {
-    $sheet
-      .removeClass('dragging snap-peek snap-half snap-full')
-      .addClass('snap-' + snap)
-      .css('transform', '');
-    currentSnap = snap;
-    updateDots(snap);
-    $backdrop.addClass('visible');
-  }
-
-  function updateDots(snap) {
-    $('.snap-dot').each(function () {
-      $(this).toggleClass('active', $(this).data('snap') === snap);
-    });
-  }
-
-  // ── Drag-to-snap logic ─────────────────────────────────────────────────────
-  let drag = {
-    active: false,
-    startY: 0,
-    startTranslate: 0,
-    lastY: 0,
-    velocity: 0,
-  };
-
-  // Sheet is always 100dvh tall; snaps are viewport-fraction translateY values.
-  function getSnapTranslate(snap) {
-    const vh = window.innerHeight;
-    switch (snap) {
-      case 'peek': return vh * 2 / 3;   // 1/3 of screen visible
-      case 'half': return vh * 1 / 3;   // 2/3 of screen visible
-      case 'full': return 0;            // full screen
-    }
-    return vh; // hidden
-  }
-
-  function getCurrentTranslate() {
-    const m = new DOMMatrix(window.getComputedStyle($sheet[0]).transform);
-    return m.m42;
-  }
-
-  function onDragStart(clientY) {
-    drag.active         = true;
-    drag.startY         = clientY;
-    drag.startTranslate = getCurrentTranslate();
-    drag.lastY          = clientY;
-    drag.velocity       = 0;
-    $sheet.addClass('dragging');
-  }
-
-  function onDragMove(clientY) {
-    if (!drag.active) return;
-    drag.velocity = clientY - drag.lastY;
-    drag.lastY    = clientY;
-
-    let next = drag.startTranslate + (clientY - drag.startY);
-    if (next < 0) next = next * 0.25;                         // rubber-band above full
-    next = Math.min(next, window.innerHeight + 60);            // clamp below screen
-
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
-      $sheet.css('transform', `translateY(${next}px)`);
-    });
-  }
-
-  function onDragEnd() {
-    if (!drag.active) return;
-    drag.active = false;
-    $sheet.removeClass('dragging');
-
-    const currentY = getCurrentTranslate();
-    const vh = window.innerHeight;
-
-    // Dismiss if dragged below the peek position (~2/3 vh) or fast flick down
-    if (currentY > vh * 0.80 || drag.velocity > 18) { close(); return; }
-
-    const snapYMap = SNAPS.reduce((acc, s) => {
-      acc[s] = getSnapTranslate(s); return acc;
-    }, {});
-
-    const biased = currentY + drag.velocity * 6;
-    let nearest = SNAPS[0], minDist = Infinity;
-    SNAPS.forEach(s => {
-      const d = Math.abs(biased - snapYMap[s]);
-      if (d < minDist) { minDist = d; nearest = s; }
-    });
-
-    applySnap(nearest);
-  }
-
-  // ── Pointer events ─────────────────────────────────────────────────────────
-  $handle[0].addEventListener('pointerdown', function (e) {
-    e.preventDefault();
-    $handle[0].setPointerCapture(e.pointerId);
-    onDragStart(e.clientY);
-  }, { passive: false });
-
-  $sheet[0].addEventListener('pointermove', e => onDragMove(e.clientY));
-  $sheet[0].addEventListener('pointerup',     onDragEnd);
-  $sheet[0].addEventListener('pointercancel', onDragEnd);
-
-  // ── Snap-dot clicks ────────────────────────────────────────────────────────
-  $('.snap-dot').on('click', function () {
-    applySnap($(this).data('snap'));
-  });
-
-  // ── Button wiring ──────────────────────────────────────────────────────────
-  $('#openBtn').on('click',  () => open('full'));
-  $('#closeBtn').on('click', close);
-  $backdrop.on('click', close);
-  $sheet.on('click', e => e.stopPropagation());
-
-  $(document).on('keydown', e => { if (e.key === 'Escape' && currentSnap) close(); });
-
-});
-</script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="js/service.js"></script>
+<script src="js/control.js"></script>
 </body>
 </html>
