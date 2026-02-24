@@ -110,12 +110,7 @@ const BottomSheetService = (function ($) {
   // ── PDF navigation ─────────────────────────────────────────────────────────
   function goToLastPage() {
     if (!pdfDoc) return;
-    var totalPages = pdfDoc.numPages;
-    // Prefer the fully rendered last page; fall back to last available
-    var $target = $canvasWrap.find('.pdf-page[data-page="' + totalPages + '"]');
-    if (!$target.length) $target = $canvasWrap.find('.pdf-page').last();
-    if (!$target.length) return;
-    $target[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $canvasWrap[0].scrollTo({ top: $canvasWrap[0].scrollHeight, behavior: 'smooth' });
   }
 
   // ── Snap state ─────────────────────────────────────────────────────────────
