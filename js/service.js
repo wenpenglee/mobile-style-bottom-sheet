@@ -14,7 +14,7 @@ const BottomSheetService = (function ($) {
   const PDF_TIMEOUT_MS          = 15000;
 
   // ── DOM refs (set via init) ────────────────────────────────────────────────
-  let $sheet, $backdrop, $snapDots, $frame, $loader, $error;
+  let $sheet, $backdrop, $snapDots, $frame, $loader, $error, $lastPageBtn;
 
   // ── State ──────────────────────────────────────────────────────────────────
   let currentSnap = null;
@@ -31,12 +31,13 @@ const BottomSheetService = (function ($) {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init(els) {
-    $sheet     = els.$sheet;
-    $backdrop  = els.$backdrop;
-    $snapDots  = els.$snapDots;
-    $frame     = els.$frame;
-    $loader    = els.$loader;
-    $error     = els.$error;
+    $sheet       = els.$sheet;
+    $backdrop    = els.$backdrop;
+    $snapDots    = els.$snapDots;
+    $frame       = els.$frame;
+    $loader      = els.$loader;
+    $error       = els.$error;
+    $lastPageBtn = els.$lastPageBtn;
   }
 
   // ── PDF (network request) ──────────────────────────────────────────────────
@@ -160,6 +161,20 @@ const BottomSheetService = (function ($) {
     applySnap(nearest);
   }
 
+  // ── PDF navigation ─────────────────────────────────────────────────────────
+  // Navigate to the last page by reloading with a very high page fragment.
+  // Native PDF viewers clamp #page=N to the actual last page.
+  function goToLastPage() {
+    if (!pdfLoaded) return;
+    $lastPageBtn.addClass('hidden');
+    $loader.removeClass('hidden');
+    $frame.one('load', function () {
+      $loader.addClass('hidden');
+      // Button stays hidden — user is already on the last page
+    });
+    $frame.attr('src', PDF_URL + '#page=9999');
+  }
+
   // ── Public API ─────────────────────────────────────────────────────────────
   return {
     init,
@@ -170,6 +185,7 @@ const BottomSheetService = (function ($) {
     onDragStart,
     onDragMove,
     onDragEnd,
+    goToLastPage,
   };
 
 }(jQuery));

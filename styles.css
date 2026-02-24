@@ -305,3 +305,44 @@ html, body {
   transition: opacity 0.15s;
 }
 .pdf-error a:active { opacity: 0.8; }
+
+/* ── Floating action button (last page) ── */
+.pdf-fab {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 20px;
+
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pdf-fab:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
+  transform: translateX(-50%) translateY(-2px);
+}
+.pdf-fab:active {
+  transform: translateX(-50%) scale(0.96);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+.pdf-fab.hidden { opacity: 0; pointer-events: none; }
+
+.fab-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}

@@ -6,17 +6,18 @@ $(function () {
   'use strict';
 
   // ── DOM references ─────────────────────────────────────────────────────────
-  const $sheet    = $('#bottomSheet');
-  const $backdrop = $('#backdrop');
-  const $handle   = $('#handleArea');
-  const $body     = $sheet.find('.sheet-body');
-  const $snapDots = $('.snap-dot');
-  const $frame    = $('#pdfFrame');
-  const $loader   = $('#pdfLoader');
-  const $error    = $('#pdfError');
+  const $sheet       = $('#bottomSheet');
+  const $backdrop    = $('#backdrop');
+  const $handle      = $('#handleArea');
+  const $body        = $sheet.find('.sheet-body');
+  const $snapDots    = $('.snap-dot');
+  const $frame       = $('#pdfFrame');
+  const $loader      = $('#pdfLoader');
+  const $error       = $('#pdfError');
+  const $lastPageBtn = $('#lastPageBtn');
 
   // ── Initialise service with DOM refs ───────────────────────────────────────
-  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error });
+  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error, $lastPageBtn });
 
   // ── Drag: handle (always triggers drag) ───────────────────────────────────
   $handle[0].addEventListener('pointerdown', function (e) {
@@ -42,8 +43,9 @@ $(function () {
   });
 
   // ── Button bindings ────────────────────────────────────────────────────────
-  $('#openBtn').on('click',  function () { BottomSheetService.open('half'); });
-  $('#closeBtn').on('click', function () { BottomSheetService.close(); });
+  $('#openBtn').on('click',     function () { BottomSheetService.open('half'); });
+  $('#closeBtn').on('click',    function () { BottomSheetService.close(); });
+  $('#lastPageBtn').on('click', function () { BottomSheetService.goToLastPage(); });
 
   // Backdrop tap closes the sheet
   $backdrop.on('click', function () { BottomSheetService.close(); });
