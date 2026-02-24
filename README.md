@@ -1,6 +1,6 @@
 # Mobile-Style Bottom Sheet
 
-A mobile app–style bottom sheet built with **HTML, CSS, jQuery**, and **PDF.js** — no build step, no framework. Open `index.html` directly in a browser.
+A mobile app–style bottom sheet built with **HTML, CSS, and jQuery only** — no build step, no framework. Open `index.html` directly in a browser.
 
 **Live repo:** https://github.com/wenpenglee/mobile-style-bottom-sheet
 
@@ -12,11 +12,11 @@ A mobile app–style bottom sheet built with **HTML, CSS, jQuery**, and **PDF.js
 - Drag handle with velocity-biased snap and rubber-band resistance
 - Smooth backdrop that dims the page at peek/half, stays visible at full
 - Rounded top corners preserved at all snap positions
-- PDF rendered page-by-page via **PDF.js** (no iframe, full JS control)
-- Floating **Last Page** button that smooth-scrolls to the end of the PDF
+- PDF displayed in a native browser `<iframe>`
+- Floating **Last Page** button — replaces the iframe with a fresh one at `#page=9999`
 - Loading spinner + error fallback state
 - Keyboard (`Escape`) and backdrop-tap dismiss
-- Zero dependencies beyond jQuery 3 and PDF.js 3
+- Zero dependencies beyond jQuery 3
 
 ---
 
@@ -74,22 +74,23 @@ Runs inside `$(function(){})`. Selects all DOM refs, calls `BottomSheetService.i
 
 ---
 
-## PDF Rendering (PDF.js)
+## PDF Display & Navigation
 
+The PDF is loaded in a native browser `<iframe>`. The iframe `src` is set by JS on first open (not in HTML) to avoid an early network request.
+
+**Why replace the element for Last Page instead of changing `.src`?**
+
+Changing only the hash of an already-loaded URL (e.g. `file.pdf` → `file.pdf#page=9999`) is treated by browsers as a *same-document hash change* — the PDF viewer never re-reads the fragment. Replacing the entire `<iframe>` element forces a genuine fresh navigation, so the viewer picks up `#page=9999` on load and jumps to the last page.
+
+```js
+// _loadFrameSrc() in service.js
+var $newFrame = $('<iframe>', { src: PDF_URL + '#page=9999', ... });
+$frame.replaceWith($newFrame);   // true fresh navigation
+$frame = $newFrame;              // keep module ref in sync
 ```
-pdfjsLib.getDocument(PDF_URL)
-  └─ renderAllPages(pdf)
-       ├─ Pre-create .pdf-page[data-page=N] wrappers in DOM order
-       ├─ Render page 1  → hide loader immediately
-       └─ Render pages 2–N in parallel (Promise.all)
-```
 
-- Scale: `(containerWidth / baseViewport.width) × devicePixelRatio` (capped at ×2)
-- `goToLastPage()` → `$canvasWrap[0].scrollTo({ top: scrollHeight, behavior: 'smooth' })`
-- Error state appears if PDF.js fails to load (e.g. CORS blocked)
-
-**Why not an `<iframe>`?**
-Native browser PDF viewers are cross-origin; JavaScript cannot scroll or navigate them programmatically. PDF.js renders the PDF in-page, giving full control.
+- All major browsers (Chrome, Firefox, Safari) clamp `#page=9999` to the actual last page.
+- Error state appears after 15 s if the iframe fails to load.
 
 ---
 
@@ -154,6 +155,5 @@ See *Adding a New PDF* above.
 | Library | Version | Purpose |
 |---|---|---|
 | [jQuery](https://jquery.com) | 3.7.1 | DOM + event helpers |
-| [PDF.js](https://mozilla.github.io/pdf.js/) | 3.11.174 | PDF fetch + canvas rendering |
 
-Both loaded from CDN — no install required.
+Loaded from CDN — no install required.

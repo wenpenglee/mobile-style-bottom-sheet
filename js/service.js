@@ -1,25 +1,24 @@
 /**
  * service.js
- * Business logic: snap state machine, drag physics, PDF rendering via PDF.js.
+ * Business logic: snap state machine, drag physics, PDF loading via iframe.
  * No direct DOM queries here — elements are injected via init().
  */
 const BottomSheetService = (function ($) {
   'use strict';
 
   // ── Constants ──────────────────────────────────────────────────────────────
-  const PDF_URL         = 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf';
-  const PDFJS_WORKER    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const SNAPS           = ['peek', 'half', 'full'];
+  const PDF_URL                 = 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf';
+  const SNAPS                   = ['peek', 'half', 'full'];
   const DISMISS_THRESHOLD_RATIO = 0.80;
   const DISMISS_VELOCITY        = 18;
+  const PDF_TIMEOUT_MS          = 15000;
 
   // ── DOM refs (set via init) ────────────────────────────────────────────────
-  let $sheet, $backdrop, $snapDots, $canvasWrap, $loader, $error;
+  let $sheet, $backdrop, $snapDots, $frame, $loader, $error;
 
   // ── State ──────────────────────────────────────────────────────────────────
   let currentSnap = null;
   let pdfLoaded   = false;
-  let pdfDoc      = null;
   let rafId       = null;
 
   const drag = {
@@ -32,85 +31,62 @@ const BottomSheetService = (function ($) {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init(els) {
-    $sheet      = els.$sheet;
-    $backdrop   = els.$backdrop;
-    $snapDots   = els.$snapDots;
-    $canvasWrap = els.$canvasWrap;
-    $loader     = els.$loader;
-    $error      = els.$error;
+    $sheet    = els.$sheet;
+    $backdrop = els.$backdrop;
+    $snapDots = els.$snapDots;
+    $frame    = els.$frame;
+    $loader   = els.$loader;
+    $error    = els.$error;
   }
 
-  // ── PDF rendering ──────────────────────────────────────────────────────────
+  // ── PDF loading ────────────────────────────────────────────────────────────
   function loadPdf() {
     if (pdfLoaded) return;
     pdfLoaded = true;
+    _loadFrameSrc(PDF_URL);
+  }
 
+  // Swap in a brand-new <iframe> pointing at `src`.
+  // Replacing the element (vs. changing .src) forces a full navigation so
+  // the browser's PDF viewer always picks up any URL fragment (#page=N).
+  function _loadFrameSrc(src) {
     $loader.removeClass('hidden');
     $error.removeClass('visible');
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    var $newFrame = $('<iframe>', {
+      'class': 'pdf-frame',
+      id:      'pdfFrame',
+      title:   'PDF Viewer',
+      allowfullscreen: '',
+    });
 
-    pdfjsLib.getDocument({ url: PDF_URL }).promise
-      .then(function (pdf) {
-        pdfDoc = pdf;
-        renderAllPages(pdf);
-      })
-      .catch(function (err) {
-        console.error('PDF load error:', err);
+    var timer = setTimeout(function () {
+      if (!$loader.hasClass('hidden')) {
         $loader.addClass('hidden');
         $error.addClass('visible');
-      });
-  }
-
-  function renderAllPages(pdf) {
-    // Pre-create page wrappers in order so they always appear top-to-bottom
-    for (var p = 1; p <= pdf.numPages; p++) {
-      $canvasWrap.append(
-        $('<div>', { 'class': 'pdf-page', 'data-page': p })
-      );
-    }
-
-    var containerWidth = $canvasWrap[0].offsetWidth || window.innerWidth;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-    function renderOne(pageNum) {
-      return pdf.getPage(pageNum).then(function (page) {
-        var baseVP   = page.getViewport({ scale: 1 });
-        var scale    = (containerWidth / baseVP.width) * dpr;
-        var viewport = page.getViewport({ scale: scale });
-
-        var canvas   = document.createElement('canvas');
-        canvas.width  = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-
-        $canvasWrap.find('.pdf-page[data-page="' + pageNum + '"]').append(canvas);
-
-        return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise
-          .then(function () {
-            // Show content as soon as page 1 is painted
-            if (pageNum === 1) $loader.addClass('hidden');
-          });
-      });
-    }
-
-    // Render page 1, then remaining pages in parallel
-    renderOne(1).then(function () {
-      var rest = [];
-      for (var p = 2; p <= pdf.numPages; p++) {
-        rest.push(renderOne(p));
       }
-      return Promise.all(rest);
-    }).catch(function (err) {
-      console.error('PDF render error:', err);
+    }, PDF_TIMEOUT_MS);
+
+    $newFrame.on('load', function () {
+      clearTimeout(timer);
       $loader.addClass('hidden');
-      if (!$canvasWrap.find('canvas').length) $error.addClass('visible');
     });
+
+    // Replace keeps the same DOM position; update the module ref so
+    // future calls (e.g. goToLastPage) target the new element.
+    $frame.replaceWith($newFrame);
+    $frame = $newFrame;
+
+    // Set src after attaching to the DOM so the load event fires reliably.
+    $frame.attr('src', src);
   }
 
   // ── PDF navigation ─────────────────────────────────────────────────────────
+  // Swap in a fresh iframe at #page=9999.
+  // All major browsers clamp this to the actual last page of the PDF.
   function goToLastPage() {
-    if (!pdfDoc) return;
-    $canvasWrap[0].scrollTo({ top: $canvasWrap[0].scrollHeight, behavior: 'smooth' });
+    if (!pdfLoaded) return;
+    _loadFrameSrc(PDF_URL + '#page=9999');
   }
 
   // ── Snap state ─────────────────────────────────────────────────────────────

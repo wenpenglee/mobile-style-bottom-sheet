@@ -71,8 +71,8 @@
            target="_blank" rel="noopener noreferrer">Open PDF</a>
       </div>
 
-      <!-- PDF.js canvas pages render here -->
-      <div class="pdf-canvas-wrap" id="pdfCanvasWrap"></div>
+      <!-- src is set by JS on open to avoid an early network request -->
+      <iframe class="pdf-frame" id="pdfFrame" title="PDF Viewer" allowfullscreen></iframe>
 
       <!-- Floating action button — last page -->
       <button class="pdf-fab" id="lastPageBtn" aria-label="Go to last page" title="Go to last page">
@@ -88,7 +88,6 @@
 </div><!-- /.bottom-sheet -->
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/service.js"></script>
 <script src="js/control.js"></script>
 </body>
