@@ -14,7 +14,7 @@ const BottomSheetService = (function ($) {
   const PDF_TIMEOUT_MS          = 15000;
 
   // ── DOM refs (set via init) ────────────────────────────────────────────────
-  let $sheet, $backdrop, $snapDots, $frame, $loader, $error;
+  let $sheet, $backdrop, $snapDots, $frame, $scrollContainer, $loader, $error;
 
   // ── State ──────────────────────────────────────────────────────────────────
   let currentSnap = null;
@@ -31,12 +31,13 @@ const BottomSheetService = (function ($) {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init(els) {
-    $sheet    = els.$sheet;
-    $backdrop = els.$backdrop;
-    $snapDots = els.$snapDots;
-    $frame    = els.$frame;
-    $loader   = els.$loader;
-    $error    = els.$error;
+    $sheet           = els.$sheet;
+    $backdrop        = els.$backdrop;
+    $snapDots        = els.$snapDots;
+    $frame           = els.$frame;
+    $scrollContainer = els.$scrollContainer;
+    $loader          = els.$loader;
+    $error           = els.$error;
   }
 
   // ── PDF loading ────────────────────────────────────────────────────────────
@@ -82,11 +83,11 @@ const BottomSheetService = (function ($) {
   }
 
   // ── PDF navigation ─────────────────────────────────────────────────────────
-  // Swap in a fresh iframe at #page=9999.
-  // All major browsers clamp this to the actual last page of the PDF.
+  // scrollTo(0, scrollHeight) on the container we own scrolls to the very
+  // bottom of the tall iframe, where the PDF viewer has rendered the last page.
   function goToLastPage() {
     if (!pdfLoaded) return;
-    _loadFrameSrc(PDF_URL + '#page=9999');
+    $scrollContainer[0].scrollTo({ top: $scrollContainer[0].scrollHeight, behavior: 'smooth' });
   }
 
   // ── Snap state ─────────────────────────────────────────────────────────────

@@ -71,8 +71,12 @@
            target="_blank" rel="noopener noreferrer">Open PDF</a>
       </div>
 
-      <!-- src is set by JS on open to avoid an early network request -->
-      <iframe class="pdf-frame" id="pdfFrame" title="PDF Viewer" allowfullscreen></iframe>
+      <!-- Scrollable wrapper we own — goToLastPage() scrolls this -->
+      <div class="pdf-scroll-container" id="pdfScrollContainer">
+        <!-- Tall iframe so the PDF viewer stacks all pages vertically -->
+        <!-- src is set by JS on open to avoid an early network request -->
+        <iframe class="pdf-frame" id="pdfFrame" title="PDF Viewer" allowfullscreen></iframe>
+      </div>
 
       <!-- Floating action button — last page -->
       <button class="pdf-fab" id="lastPageBtn" aria-label="Go to last page" title="Go to last page">

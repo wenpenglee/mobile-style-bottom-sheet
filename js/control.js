@@ -6,16 +6,17 @@ $(function () {
   'use strict';
 
   // ── DOM references ─────────────────────────────────────────────────────────
-  const $sheet    = $('#bottomSheet');
-  const $backdrop = $('#backdrop');
-  const $handle   = $('#handleArea');
-  const $snapDots = $('.snap-dot');
-  const $frame    = $('#pdfFrame');
-  const $loader   = $('#pdfLoader');
-  const $error    = $('#pdfError');
+  const $sheet           = $('#bottomSheet');
+  const $backdrop        = $('#backdrop');
+  const $handle          = $('#handleArea');
+  const $snapDots        = $('.snap-dot');
+  const $frame           = $('#pdfFrame');
+  const $scrollContainer = $('#pdfScrollContainer');
+  const $loader          = $('#pdfLoader');
+  const $error           = $('#pdfError');
 
   // ── Initialise service with DOM refs ───────────────────────────────────────
-  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $loader, $error });
+  BottomSheetService.init({ $sheet, $backdrop, $snapDots, $frame, $scrollContainer, $loader, $error });
 
   // ── Drag: handle always triggers drag ─────────────────────────────────────
   $handle[0].addEventListener('pointerdown', function (e) {
@@ -24,8 +25,13 @@ $(function () {
     BottomSheetService.onDragStart(e.clientY);
   }, { passive: false });
 
-  // Note: pointer events inside a cross-origin iframe are not accessible,
-  // so drag-from-body is handle-only. The handle is always reachable.
+  // Drag from scroll container only when scrolled to the very top
+  $scrollContainer[0].addEventListener('pointerdown', function (e) {
+    if ($scrollContainer[0].scrollTop === 0) {
+      BottomSheetService.onDragStart(e.clientY);
+    }
+  });
+
   $sheet[0].addEventListener('pointermove',   function (e) { BottomSheetService.onDragMove(e.clientY); });
   $sheet[0].addEventListener('pointerup',     function ()  { BottomSheetService.onDragEnd(); });
   $sheet[0].addEventListener('pointercancel', function ()  { BottomSheetService.onDragEnd(); });
